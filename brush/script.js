@@ -9,9 +9,11 @@ window.onload = () => {
 
 	ajax.open('GET', './brush.svg', true);
 	ajax.send();
-	ajax.onload = () => {
-		const stroke = createStroke(hero);
-		animateStroke(stroke.fragments, stroke.duration);
+	ajax.onload = async () => {
+		for (let idx = 0; idx < 6; idx++) {
+			const stroke = createStroke(hero);
+			await animateStroke(stroke.fragments, stroke.duration);
+		}
 	};
 
 	const createStroke = (parent) => {
@@ -58,7 +60,7 @@ window.onload = () => {
 	const animateStroke = (fragments, duration) => {
 		let starttime;
 
-		const moveit = (fragments, duration, timestamp) => {
+		const moveit = (fragments, duration, timestamp, resolve) => {
 			const runtime = timestamp - starttime;
 			const progress = runtime / duration;
 
@@ -72,14 +74,18 @@ window.onload = () => {
 
 			if (runtime < duration) {
 				requestAnimationFrame((timestamp) => {
-					moveit(fragments, duration, timestamp);
+					moveit(fragments, duration, timestamp, resolve);
 				});
+			} else {
+				resolve();
 			}
 		};
 
-		requestAnimationFrame((timestamp) => {
-			starttime = timestamp;
-			moveit(fragments, duration, timestamp);
+		return new Promise((resolve) => {
+			requestAnimationFrame((timestamp) => {
+				starttime = timestamp;
+				moveit(fragments, duration, timestamp, resolve);
+			});
 		});
 	};
 
