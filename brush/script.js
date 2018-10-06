@@ -4,9 +4,6 @@ window.onload = () => {
 	const ajax = new XMLHttpRequest();
 	const hero = document.getElementById('hero');
 
-	const width = hero.clientWidth;
-	const height = hero.clientHeight;
-
 	ajax.open('GET', './brush.svg', true);
 	ajax.send();
 	ajax.onload = async () => {
@@ -28,7 +25,7 @@ window.onload = () => {
 
 		// Calculate total number of brush stroke fragments
 		const fragLength = getFragLength();
-		const maxLength = getMaxLength(width, height, rotation);
+		const maxLength = getMaxLength(parent.clientWidth, parent.clientHeight, rotation);
 		let fragTotal = Math.floor(maxLength * 3 / fragLength);
 
 		// Calculate segment number
@@ -52,7 +49,7 @@ window.onload = () => {
 			stroke.appendChild(fragment);
 		}
 
-		hero.appendChild(stroke);
+		parent.appendChild(stroke);
 
 		return { duration: maxLength/fragLength * 50, fragments };
 	};
