@@ -1,17 +1,22 @@
 'use strict';
 
 window.onload = () => {
-
 	const ajax = new XMLHttpRequest();
 	const hero = document.getElementById('hero');
 
 	const width = hero.clientWidth;
 	const height = hero.clientHeight;
-	const rotation = Math.random() * 360;
 
 	ajax.open('GET', './brush.svg', true);
 	ajax.send();
 	ajax.onload = () => {
+		const stroke = createStroke(hero);
+		animateStroke(stroke.fragments, stroke.duration);
+	};
+
+	const createStroke = (parent) => {
+		const rotation = Math.random() * 360;
+
 		// Style the stroke
 		const stroke = document.createElement('div');
 		stroke.className = 'stroke';
@@ -38,7 +43,7 @@ window.onload = () => {
 			const targetY = getTargetY(maxDis, segNum, idx);
 
 			// Store individual fragment settings to fragments object
-			fragments[idx] = { div: fragment, initialY, currentY: initialY, targetY, deltaY: 0 };
+			fragments[idx] = { div: fragment, initialY, distanceY: targetY - initialY };
 
 			// Append individual fragment to a stroke
 			fragment.style.transform = `translateY(${initialY}px)`;
@@ -47,33 +52,35 @@ window.onload = () => {
 
 		hero.appendChild(stroke);
 
-		animate(fragments, maxLength/fragLength, maxLength/fragLength * 50);
-		// animate(fragments, 5, 200);
+		return { duration: maxLength/fragLength * 50, fragments };
 	};
 
-	// Animate, 100ms default timeout, 1s default duration
-	const animate = (fragments, timeout = 100, duration = 1000) => {
-		let totalSteps = Math.round(duration / timeout);
-		for (const idx in fragments) {
-			if (fragments.hasOwnProperty(idx)) {
-				fragments[idx].deltaY = (fragments[idx].targetY - fragments[idx].initialY) / totalSteps;
-			}
-		}
+	const animateStroke = (fragments, duration) => {
+		let starttime;
 
-		const timer = setInterval(() => {
-			if (totalSteps <= 0) {
-				clearInterval(timer);
-			}
+		const moveit = (fragments, duration, timestamp) => {
+			const runtime = timestamp - starttime;
+			const progress = runtime / duration;
 
 			for (const idx in fragments) {
 				if (fragments.hasOwnProperty(idx)) {
-					fragments[idx].currentY += fragments[idx].deltaY;
-					fragments[idx].div.style.transform = `translateY(${fragments[idx].currentY}px)`;
+					const fragment = fragments[idx];
+					const currentY = fragment.initialY + fragment.distanceY * progress;
+					fragment.div.style.transform = `translateY(${currentY}px)`;
 				}
 			}
 
-			totalSteps--;
-		}, timeout);
+			if (runtime < duration) {
+				requestAnimationFrame((timestamp) => {
+					moveit(fragments, duration, timestamp);
+				});
+			}
+		};
+
+		requestAnimationFrame((timestamp) => {
+			starttime = timestamp;
+			moveit(fragments, duration, timestamp);
+		});
 	};
 
 	// Get individual brush stroke fragment length
